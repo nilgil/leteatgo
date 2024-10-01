@@ -1,0 +1,27 @@
+app:
+  name: ${project.name}
+  version: ${project.version}
+
+server:
+  port: 30090
+  servlet:
+    context-path: /notification
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  profiles:
+    active: local
+    include: security, email, sms
+
+springdoc:
+  swagger-ui:
+    path: "/swagger"
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+    try-it-out-enabled: true
+    doc-expansion: none
+    default-model-expand-depth: 2
+  override-with-generic-response: false

@@ -1,0 +1,4 @@
+jwt:
+  secret-name: ${AWS_JWT_SECRET_NAME}
+  default-access-token-exp-time: ${AT_EXP_TIME}
+  default-refresh-token-exp-time: ${RT_EXP_TIME}

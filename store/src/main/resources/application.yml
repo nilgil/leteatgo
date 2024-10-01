@@ -1,0 +1,39 @@
+app:
+  name: ${project.name}
+  version: ${project.version}
+
+server:
+  port: 30030
+  servlet:
+    context-path: /store
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  profiles:
+    active: local
+    include: security
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 1000
+      org:
+        hibernate:
+          envers:
+            store_data_at_delete: true
+
+springdoc:
+  swagger-ui:
+    path: "/swagger"
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+    try-it-out-enabled: true
+    doc-expansion: none
+    default-model-expand-depth: 2
+  override-with-generic-response: false

@@ -1,0 +1,6 @@
+naver:
+  account:
+    access-key: ${NAVER_ACCESS_KEY}
+    secret-key: ${NAVER_SECRET_KEY}
+  sms:
+    service-id: ${NAVER_SMS_SERVICE_ID}
