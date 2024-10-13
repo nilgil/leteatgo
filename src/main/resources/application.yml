@@ -1,0 +1,35 @@
+server:
+  port: 30000
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application.name: leteatgo
+  profiles:
+    active: local
+    include: security, jwt, aws, email
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+      org:
+        hibernate:
+          envers:
+            store_data_at_delete: true
+
+springdoc:
+  swagger-ui:
+    path: "/swagger"
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+    try-it-out-enabled: true
+    doc-expansion: none
+    default-model-expand-depth: 2
+  override-with-generic-response: false

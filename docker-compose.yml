@@ -1,0 +1,13 @@
+services:
+  database:
+    image: mysql:8
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./localdb:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: leteatgo
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: nilgil
+      MYSQL_PASSWORD: test
