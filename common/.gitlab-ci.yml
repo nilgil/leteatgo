@@ -1,6 +1,0 @@
-publish:
-  image: gradle:jdk17
-  script:
-    - gradle publish
-  only:
-    - prod
