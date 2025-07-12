@@ -1,0 +1,54 @@
+name: Auto Link Issue in PR Description
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  auto-link-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract branch name and PR number
+        run: |
+          echo "branch_name=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+
+      - name: Extract issue number from branch name
+        id: extract
+        run: |
+          if [[ "${{ env.branch_name }}" =~ ^[a-zA-Z]+/([0-9]+) ]]; then
+            echo "issue_number=${BASH_REMATCH[1]}" >> $GITHUB_ENV
+            echo "Found issue number: ${BASH_REMATCH[1]}"
+          else
+            echo "No issue number found in branch name. Skipping."
+            exit 0
+          fi
+
+      - name: Get PR body
+        id: get-body
+        run: |
+          body=$(gh pr view ${{ env.pr_number }} --json body -q .body)
+          echo "body<<EOF" >> $GITHUB_ENV
+          echo "$body" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR body if needed
+        if: env.issue_number != ''
+        run: |
+          if [[ "$body" != *"Closes #${issue_number}"* ]]; then
+            new_body="${body}\n\nCloses #${issue_number}"
+            echo "Updating PR body..."
+            gh pr edit ${{ env.pr_number }} --body "$new_body"
+          else
+            echo "PR body already contains Closes #${issue_number}, skipping."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          body: ${{ env.body }}
+          issue_number: ${{ env.issue_number }}
