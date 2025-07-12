@@ -20,6 +20,10 @@ jobs:
       contents: read
 
     steps:
+      # 레포를 체크아웃해서 .git 디렉토리 확보
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       # PR 번호 설정
       - name: Set PR number
         run: |
