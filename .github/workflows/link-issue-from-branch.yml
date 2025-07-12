@@ -1,54 +1,58 @@
-name: Auto Link Issue in PR Description
+name: 'PR Description Automation'
 
+# PR이 생성되었을 때만 이 워크플로우를 실행합니다.
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened]
 
 jobs:
-  auto-link-issue:
+  add-issue-to-description:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Extract branch name and PR number
+      # 1. 브랜치 이름에서 이슈 번호(숫자)를 추출합니다.
+      - name: 'Get Issue Number from Branch Name'
+        id: get_issue_number
         run: |
-          echo "branch_name=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
-          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          # github.head_ref는 현재 PR의 소스 브랜치 이름을 담고 있습니다.
+          # 예: feature/123-login -> 123
+          BRANCH_NAME="${{ github.head_ref }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Extract issue number from branch name
-        id: extract
-        run: |
-          if [[ "${{ env.branch_name }}" =~ ^[a-zA-Z]+/([0-9]+) ]]; then
-            echo "issue_number=${BASH_REMATCH[1]}" >> $GITHUB_ENV
-            echo "Found issue number: ${BASH_REMATCH[1]}"
-          else
-            echo "No issue number found in branch name. Skipping."
-            exit 0
-          fi
+      # 2. 추출한 이슈 번호가 있을 경우에만 PR 설명을 업데이트합니다.
+      - name: 'Update PR Description'
+        if: steps.get_issue_number.outputs.issue_number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 이전 스텝에서 추출한 이슈 번호
+            const issueNumber = '${{ steps.get_issue_number.outputs.issue_number }}';
 
-      - name: Get PR body
-        id: get-body
-        run: |
-          body=$(gh pr view ${{ env.pr_number }} --json body -q .body)
-          echo "body<<EOF" >> $GITHUB_ENV
-          echo "$body" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            // 현재 PR의 정보
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
 
-      - name: Update PR body if needed
-        if: env.issue_number != ''
-        run: |
-          if [[ "$body" != *"Closes #${issue_number}"* ]]; then
-            new_body="${body}\n\nCloses #${issue_number}"
-            echo "Updating PR body..."
-            gh pr edit ${{ env.pr_number }} --body "$new_body"
-          else
-            echo "PR body already contains Closes #${issue_number}, skipping."
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          body: ${{ env.body }}
-          issue_number: ${{ env.issue_number }}
+            const currentBody = pullRequest.body || '';
+            const closingStatement = `Closes #${issueNumber}`;
+
+            // 이미 Closes 구문이 포함되어 있다면 중복 추가하지 않습니다.
+            if (currentBody.includes(closingStatement)) {
+              console.log('PR description already contains the closing statement.');
+              return;
+            }
+
+            // 새로운 PR 설명 생성 (Closes 구문을 맨 위에 추가)
+            const newBody = `${closingStatement}\n\n${currentBody}`;
+
+            // PR 설명 업데이트 API 호출
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: newBody
+            });
+
+            console.log(`Successfully updated PR description with "${closingStatement}".`);
